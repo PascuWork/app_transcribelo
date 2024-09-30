@@ -1,30 +1,47 @@
 #!/bin/bash
-
-# Verifica si estás en un sistema Windows
+#ejecutar el script
+#./setup_ffmpeg.sh
+# Verifica si estás en un sistema Windows (Git Bash o WSL)
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
-    echo "Instalando FFmpeg para Windows..."
+    echo "Instalando FFmpeg precompilado para Windows..."
 
-    # Verifica si FFmpeg ya está instalado
-    if command -v ffmpeg &> /dev/null; then
-        echo "FFmpeg ya está instalado."
+    # Descargar FFmpeg precompilado para Windows
+    curl -L https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-full.7z -o ffmpeg.7z
+
+    # Verificar si la descarga fue exitosa
+    if [[ -f "ffmpeg.7z" ]]; then
+        echo "Descarga completada exitosamente."
+
+        # Instalar 7-Zip si no está disponible (solo para Git Bash en Windows)
+        if ! command -v 7z &> /dev/null; then
+            echo "7-Zip no está instalado. Instalando 7-Zip..."
+            curl -L https://www.7-zip.org/a/7z2107-x64.exe -o 7zip-installer.exe
+            ./7zip-installer.exe /S  # Instalar silenciosamente
+            echo "7-Zip instalado."
+        fi
+
+        # Extraer el archivo 7z descargado
+        7z x ffmpeg.7z -offmpeg
+
+        # Mover FFmpeg a la ruta P:\ffmpeg
+        mkdir -p "P:/ffmpeg"
+        mv ffmpeg/* "P:/ffmpeg"
+
+        # Verifica si FFmpeg ya está en el PATH
+        if command -v ffmpeg &> /dev/null; then
+            echo "FFmpeg ya está en el PATH."
+        else
+            # Agregar FFmpeg al PATH de manera permanente usando PowerShell
+            echo "Agregando FFmpeg al PATH permanentemente..."
+            powershell -Command "[Environment]::SetEnvironmentVariable('PATH', \$env:PATH + ';P:\\ffmpeg\\bin', [EnvironmentVariableTarget]::User)"
+            
+            echo "FFmpeg instalado correctamente y agregado al PATH."
+            echo "Es posible que necesites reiniciar la terminal o la computadora para que los cambios surtan efecto."
+        fi
     else
-        # Descargar FFmpeg para Windows (versión precompilada)
-        curl -L https://github.com/GyanD/codexffmpeg/releases/download/2023-09-01/ffmpeg-2023-09-01-git-e3f97ca5d6-full_build.zip -o ffmpeg.zip
-
-        # Extraer FFmpeg
-        unzip ffmpeg.zip -d ffmpeg
-
-        # Mover FFmpeg al directorio correcto (dentro de la carpeta de programas o similar)
-        mkdir -p "$HOME/Programs/ffmpeg"
-        mv ffmpeg/* "$HOME/Programs/ffmpeg"
-
-        # Agregar FFmpeg al PATH de manera permanente usando PowerShell
-        echo "Agregando FFmpeg al PATH permanentemente..."
-        powershell -Command '[Environment]::SetEnvironmentVariable("PATH", "$env:PATH;$HOME/Programs/ffmpeg/bin", [EnvironmentVariableTarget]::User)'
-
-        echo "FFmpeg instalado correctamente y agregado al PATH."
-        echo "Es posible que necesites reiniciar la terminal para que los cambios surtan efecto."
+        echo "La descarga de FFmpeg falló. Por favor, verifica tu conexión o el enlace de descarga."
     fi
+
 else
-    echo "Este script es solo para sistemas Windows."
+    echo "Este script es solo para sistemas Windows con Git Bash o WSL."
 fi
