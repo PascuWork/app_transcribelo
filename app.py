@@ -1,6 +1,5 @@
 from flask import Flask, request, render_template, send_file
 import whisperx
-import openai
 import subprocess
 from dotenv import load_dotenv
 import os
@@ -18,13 +17,6 @@ device = "cpu"  # Cambia a "cuda" si tienes GPU
 print(f"Inicializando modelo WhisperX en {device}...")
 whisperx_model = whisperx.load_model("large-v2", device, compute_type="float32")
 print("Modelo WhisperX cargado exitosamente.")
-
-# Clave API de OpenAI desde .env
-openai.api_key = os.getenv('OPENAI_API_KEY')
-if openai.api_key:
-    print("Clave API de OpenAI cargada correctamente.")
-else:
-    print("Error: No se ha encontrado la clave API de OpenAI.")
 
 # Función para renombrar archivo a MP3 si es necesario
 def ensure_mp3_extension(input_file):
@@ -57,24 +49,28 @@ def upload_file():
         print("Audio cargado exitosamente, iniciando transcripción...")
         result = whisperx_model.transcribe(audio)
         
-        # Verificar si 'text' está en result
-        if 'text' in result:
-            transcripcion = result['text']
-            print(f"Transcripción completada: {transcripcion[:100]}...")  # Mostrar solo los primeros 100 caracteres
+        # Verificar si 'segments' está en result
+        if 'segments' in result:
+            print("Transcripción completada. Procesando segmentos...")
+            # Concatenar los textos de cada segmento
+            transcripcion = " ".join([segment['text'] for segment in result['segments']])
+            print(f"Transcripción: {transcripcion[:100]}...")  # Mostrar los primeros 100 caracteres para depuración
         else:
-            print(f"Error: No se encontró el campo 'text' en el resultado. Resultado: {result}")
+            print(f"Error: No se encontró el campo 'segments' en el resultado. Resultado: {result}")
             transcripcion = "Transcripción no disponible."
 
-        # Guardar la transcripción en la carpeta 'transcriptions'
-        transcripcion_path = os.path.join('transcriptions', 'transcripcion.txt')
+        # Guardar la transcripción con el mismo nombre del archivo de audio pero con extensión .txt
+        transcripcion_filename = os.path.splitext(original_filename)[0] + '.txt'
+        transcripcion_path = os.path.join('transcriptions', transcripcion_filename)
         print(f"Guardando transcripción en {transcripcion_path}...")
         with open(transcripcion_path, 'w') as f:
             f.write(transcripcion)
         print("Transcripción guardada.")
 
+        # Comentar el bloque de generación de resumen con GPT
+        """
         # Generar resumen con GPT usando la nueva API
         print("Generando resumen con OpenAI GPT usando la nueva API...")
-
         respuesta = openai.chat_completions.create(
             model="gpt-4",  # Cambia al modelo adecuado
             messages=[
@@ -82,7 +78,6 @@ def upload_file():
                 {"role": "user", "content": f"Resume el siguiente texto:\n{transcripcion}"}
             ]
         )
-
         resumen = respuesta['choices'][0]['message']['content']
         print(f"Resumen generado: {resumen[:100]}...")
 
@@ -92,8 +87,9 @@ def upload_file():
         with open(resumen_path, 'w') as f:
             f.write(resumen)
         print("Resumen guardado.")
+        """
 
-        return render_template('download.html')
+        return send_file(transcripcion_path, as_attachment=True)
 
     return render_template('upload.html')
 
