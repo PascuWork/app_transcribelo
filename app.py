@@ -24,13 +24,9 @@ def upload_file():
         result = model.transcribe('audio.mp3')
         transcripcion = result['text']
 
-        # Guardar la transcripción en un archivo .txt
-        with open('transcripcion.txt', 'w') as f:
-            f.write(transcripcion)
-
-        # Generar resumen con GPT
+        # Generar resumen con GPT-4o mini
         respuesta = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",  # Cambiado a GPT-4o mini
             messages=[
                 {"role": "system", "content": "Eres un asistente que crea resúmenes detallados en Markdown."},
                 {"role": "user", "content": f"Resume el siguiente texto:\n{transcripcion}"}
