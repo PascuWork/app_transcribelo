@@ -7,4 +7,4 @@ __pycache__/
 *.pyo
 
 # Archivos de configuración o claves
-#.env
+.env
