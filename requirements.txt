@@ -1,0 +1,4 @@
+flask
+openai-whisper
+python-dotenv
+openai
