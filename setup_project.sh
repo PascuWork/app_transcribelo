@@ -38,6 +38,9 @@ import subprocess
 from dotenv import load_dotenv
 import os
 
+# Agrega FFmpeg al PATH en tiempo de ejecución
+os.environ['PATH'] += os.pathsep + "P:/ffmpeg/bin"
+
 # Cargar variables de entorno desde .env
 load_dotenv()
 
@@ -52,8 +55,9 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # Función para convertir archivos de audio a MP3 si es necesario
 def convert_to_mp3(input_file, output_file):
-    command = ['ffmpeg', '-i', input_file, output_file]
-    subprocess.run(command)
+    ffmpeg_path = "P:/ffmpeg/bin/ffmpeg.exe"  # Ruta completa a FFmpeg
+    command = [ffmpeg_path, '-i', input_file, output_file]
+    subprocess.run(command, check=True)
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
