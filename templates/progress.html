@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+    <title>Subir Archivo</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Sube tu archivo .mp3 o de otro formato de audio</h1>
+    <form id="uploadForm" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" required>
+        <button type="submit">Subir</button>
+    </form>
+
+    <div id="progress-container" style="display: none;">
+        <h3>Progreso:</h3>
+        <div style="border: 1px solid #000; width: 100%; background: #ccc;">
+            <div id="progress-bar" style="width: 0%; height: 20px; background: #76c7c0;"></div>
+        </div>
+        <p id="progress-text">0% completado</p>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#uploadForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                // Mostrar la barra de progreso
+                $('#progress-container').show();
+
+                var formData = new FormData(this);
+                
+                // Subir el archivo mediante AJAX
+                $.ajax({
+                    xhr: function() {
+                        var xhr = new window.XMLHttpRequest();
+                        return xhr;
+                    },
+                    url: '/',
+                    type: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {
+                        console.log('Archivo subido con éxito');
+                    }
+                });
+
+                // Actualizar el progreso cada segundo
+                var interval = setInterval(function() {
+                    $.getJSON('/progress', function(data) {
+                        var progress = data.progress;
+                        $('#progress-bar').css('width', progress + '%');
+                        $('#progress-text').text(progress + '% completado');
+
+                        if (progress >= 100) {
+                            clearInterval(interval);
+                        }
+                    });
+                }, 1000);  // Actualiza cada segundo
+            });
+        });
+    </script>
+</body>
+</html>
