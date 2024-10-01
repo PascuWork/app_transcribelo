@@ -1,63 +1,70 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-    <title>Subir Archivo</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcripción en progreso</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        #progress-bar-container {
+            width: 100%;
+            background-color: #f3f3f3;
+            border-radius: 25px;
+            margin-top: 20px;
+        }
+        #progress-bar {
+            width: 0%;
+            height: 30px;
+            background-color: #4caf50;
+            border-radius: 25px;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+        }
+        #download-links {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Sube tu archivo .mp3 o de otro formato de audio</h1>
-    <form id="uploadForm" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" required>
-        <button type="submit">Subir</button>
-    </form>
+    <h1>Transcripción en progreso...</h1>
+    <div id="progress-bar-container">
+        <div id="progress-bar">0%</div>
+    </div>
+    <p id="progress-status">Iniciando transcripción...</p>
 
-    <div id="progress-container" style="display: none;">
-        <h3>Progreso:</h3>
-        <div style="border: 1px solid #000; width: 100%; background: #ccc;">
-            <div id="progress-bar" style="width: 0%; height: 20px; background: #76c7c0;"></div>
-        </div>
-        <p id="progress-text">0% completado</p>
+    <div id="download-links">
+        <h2>Procesamiento Completo</h2>
+        <p>Tu archivo ha sido procesado. Puedes descargar los resultados a continuación:</p>
+        <a id="download-transcription" href="#">Descargar Transcripción (.txt)</a><br>
+        <a id="download-summary" href="#">Descargar Resumen (.md)</a>
     </div>
 
     <script>
-        $(document).ready(function() {
-            $('#uploadForm').on('submit', function(e) {
-                e.preventDefault();
-                
-                // Mostrar la barra de progreso
-                $('#progress-container').show();
+        function updateProgress() {
+            $.getJSON('/progress', function(data) {
+                $('#progress-bar').css('width', data.percent + '%');
+                $('#progress-bar').text(data.percent + '%');
+                $('#progress-status').text(data.status);
 
-                var formData = new FormData(this);
-                
-                // Subir el archivo mediante AJAX
-                $.ajax({
-                    xhr: function() {
-                        var xhr = new window.XMLHttpRequest();
-                        return xhr;
-                    },
-                    url: '/',
-                    type: 'POST',
-                    data: formData,
-                    contentType: false,
-                    processData: false,
-                    success: function(response) {
-                        console.log('Archivo subido con éxito');
-                    }
-                });
+                if (data.percent < 100) {
+                    setTimeout(updateProgress, 1000);  // Actualizar cada 1 segundo
+                } else {
+                    // Mostrar los enlaces de descarga cuando el proceso termine
+                    $('#progress-bar-container').hide();
+                    $('#progress-status').hide();
+                    $('#download-links').show();
 
-                // Actualizar el progreso cada segundo
-                var interval = setInterval(function() {
-                    $.getJSON('/progress', function(data) {
-                        var progress = data.progress;
-                        $('#progress-bar').css('width', progress + '%');
-                        $('#progress-text').text(progress + '% completado');
-
-                        if (progress >= 100) {
-                            clearInterval(interval);
-                        }
-                    });
-                }, 1000);  // Actualiza cada segundo
+                    // Actualizar enlaces de descarga
+                    $('#download-transcription').attr('href', '/download/{{ transcripcion_filename }}');
+                    $('#download-summary').attr('href', '/download/resumen.md');
+                }
             });
+        }
+
+        $(document).ready(function() {
+            updateProgress();
         });
     </script>
 </body>
