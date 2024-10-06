@@ -4,6 +4,9 @@ import subprocess
 from dotenv import load_dotenv
 import os
 import threading
+import torch  # Import necesario para verificar si CUDA está disponible
+from io import BytesIO
+import tempfile  # Importar para manejar archivos temporales
 
 # Agrega FFmpeg al PATH en tiempo de ejecución
 os.environ['PATH'] += os.pathsep + "P:/ffmpeg/bin"
@@ -13,11 +16,13 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Configuración de WhisperX
-device = "cpu"  # Cambia a "cuda" si tienes GPU
+# Verificación de CUDA: usar GPU si está disponible, de lo contrario, usar CPU
+device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Inicializando modelo WhisperX en {device}...")
-whisperx_model = whisperx.load_model("medium", device, compute_type="float32")  # Cambiado a 'medium'
-print("Modelo WhisperX cargado exitosamente.")
+
+# Configuración de WhisperX
+whisperx_model = whisperx.load_model("medium", device, compute_type="float32")
+print(f"Modelo WhisperX cargado exitosamente en {device}.")
 
 # Variable global para almacenar el progreso
 progress = {
@@ -25,41 +30,52 @@ progress = {
     "percent": 0
 }
 
-# Función para convertir el archivo de audio a MP3 optimizado
-def convert_to_mp3(input_file, output_file):
+# Función para convertir el archivo de audio a MP3 optimizado en memoria
+def convert_to_mp3_in_memory(input_file):
     ffmpeg_path = "P:/ffmpeg/bin/ffmpeg.exe"  # Ruta completa a FFmpeg
-    
+
+    # Usar flujos de memoria en lugar de escribir archivos
+    output_mp3 = BytesIO()  # Flujo de salida para el archivo optimizado en memoria
+
     # Comando FFmpeg para optimizar el audio
     command = [
-        ffmpeg_path, 
-        '-i', input_file,           # Archivo de entrada
-        '-ac', '1',                 # Convertir a mono
-        '-ar', '16000',             # Reducir la frecuencia de muestreo a 16 kHz
-        '-b:a', '64k',              # Reducir la tasa de bits a 64 kbps
-        output_file
+        ffmpeg_path,
+        '-i', input_file,          # Archivo de entrada
+        '-ac', '1',                # Convertir a mono
+        '-ar', '16000',            # Reducir la frecuencia de muestreo a 16 kHz
+        '-b:a', '32k',             # Reducir la tasa de bits a 32 kbps (más agresivo)
+        '-f', 'mp3',               # Formato de salida mp3
+        'pipe:1'                   # Salida a stdout (flujo en memoria)
     ]
-    
-    subprocess.run(command, check=True)
-    print(f"Archivo convertido y optimizado en {output_file}")
 
-# Función para renombrar archivo a MP3 si es necesario
-def ensure_mp3_extension(input_file):
-    base, ext = os.path.splitext(input_file)
-    if ext.lower() != '.mp3':
-        # Renombrar el archivo con la extensión .mp3
-        mp3_file = f"{base}.mp3"
-        os.rename(input_file, mp3_file)
-        print(f"Renombrando archivo {input_file} a {mp3_file}")
-        return mp3_file
-    return input_file
+    # Ejecutar el comando FFmpeg y escribir la salida en el flujo de memoria
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout_data, stderr_data = process.communicate()
+
+    if process.returncode != 0:
+        raise Exception(f"Error en la conversión de FFmpeg: {stderr_data.decode()}")
+
+    output_mp3.write(stdout_data)
+    output_mp3.seek(0)  # Reiniciar el puntero al principio del archivo en memoria
+
+    print(f"Archivo convertido y optimizado en memoria.")
+    return output_mp3
 
 # Función para realizar la transcripción en segundo plano
-def transcribir_audio(output_mp3, transcripcion_path, language):
+def transcribir_audio(input_stream, transcripcion_path, language):
     global progress
     try:
-        # Transcribir el audio con WhisperX
-        print("Cargando audio para transcripción...")
-        audio = whisperx.load_audio(output_mp3)
+        # Crear un archivo temporal para guardar el audio desde el flujo en memoria
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as temp_audio_file:
+            temp_audio_file.write(input_stream.read())
+            temp_audio_file.flush()  # Asegurarse de que los datos se escriban completamente
+            temp_audio_path = temp_audio_file.name
+
+        print(f"Archivo temporal creado en {temp_audio_path}")
+
+        # Cargar el audio desde el archivo temporal para WhisperX
+        print("Cargando audio para transcripción desde el archivo temporal...")
+        audio = whisperx.load_audio(temp_audio_path)
         print("Audio cargado exitosamente, iniciando transcripción...")
 
         # Transcripción en segmentos
@@ -92,6 +108,10 @@ def transcribir_audio(output_mp3, transcripcion_path, language):
         progress['percent'] = 100
         print("Transcripción completada y guardada.")
 
+        # Eliminar el archivo temporal después de la transcripción
+        os.remove(temp_audio_path)
+        print(f"Archivo temporal eliminado: {temp_audio_path}")
+
     except Exception as e:
         progress['status'] = f"Error: {str(e)}"
         print(f"Error en la transcripción: {str(e)}")
@@ -108,9 +128,8 @@ def upload_file():
         audio_file.save(input_path)
         print(f"Archivo guardado en {input_path}.")
 
-        # Convertir el archivo a MP3 optimizado
-        output_mp3 = os.path.join('uploads', 'audio_optimized.mp3')
-        convert_to_mp3(input_path, output_mp3)
+        # Convertir el archivo a MP3 optimizado en memoria
+        optimized_audio_stream = convert_to_mp3_in_memory(input_path)
 
         # Nombre de archivo de transcripción
         transcripcion_filename = os.path.splitext(original_filename)[0] + '.txt'
@@ -123,7 +142,7 @@ def upload_file():
         progress = {"status": "Iniciando transcripción...", "percent": 0}
 
         # Procesar el audio en un hilo separado para no bloquear el servidor
-        thread = threading.Thread(target=transcribir_audio, args=(output_mp3, transcripcion_path, selected_language))
+        thread = threading.Thread(target=transcribir_audio, args=(optimized_audio_stream, transcripcion_path, selected_language))
         thread.start()
 
         return render_template('progress.html', transcripcion_filename=transcripcion_filename)
