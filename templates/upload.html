@@ -1,12 +1,26 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Subir Archivo</title>
 </head>
 <body>
     <h1>Sube tu archivo .mp3 o de otro formato de audio</h1>
     <form method="post" enctype="multipart/form-data">
-        <input type="file" name="file" required>
+        <input type="file" name="file" required><br><br>
+        
+        <label for="language">Selecciona el idioma del audio:</label>
+        <select name="language" required>
+            <option value="es">Español</option>
+            <option value="en">Inglés</option>
+            <option value="de">Alemán</option>
+            <option value="it">Italiano</option>
+            <option value="fr">Francés</option>
+            <option value="ja">Japonés</option>
+            <option value="zh">Chino</option>
+        </select><br><br>
+        
         <button type="submit">Subir</button>
     </form>
 </body>

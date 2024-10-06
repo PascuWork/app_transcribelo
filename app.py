@@ -16,7 +16,7 @@ app = Flask(__name__)
 # Configuración de WhisperX
 device = "cpu"  # Cambia a "cuda" si tienes GPU
 print(f"Inicializando modelo WhisperX en {device}...")
-whisperx_model = whisperx.load_model("large-v2", device, compute_type="float32")
+whisperx_model = whisperx.load_model("medium", device, compute_type="float32")  # Cambiado a 'medium'
 print("Modelo WhisperX cargado exitosamente.")
 
 # Variable global para almacenar el progreso
@@ -24,6 +24,23 @@ progress = {
     "status": "Procesando...",
     "percent": 0
 }
+
+# Función para convertir el archivo de audio a MP3 optimizado
+def convert_to_mp3(input_file, output_file):
+    ffmpeg_path = "P:/ffmpeg/bin/ffmpeg.exe"  # Ruta completa a FFmpeg
+    
+    # Comando FFmpeg para optimizar el audio
+    command = [
+        ffmpeg_path, 
+        '-i', input_file,           # Archivo de entrada
+        '-ac', '1',                 # Convertir a mono
+        '-ar', '16000',             # Reducir la frecuencia de muestreo a 16 kHz
+        '-b:a', '64k',              # Reducir la tasa de bits a 64 kbps
+        output_file
+    ]
+    
+    subprocess.run(command, check=True)
+    print(f"Archivo convertido y optimizado en {output_file}")
 
 # Función para renombrar archivo a MP3 si es necesario
 def ensure_mp3_extension(input_file):
@@ -37,7 +54,7 @@ def ensure_mp3_extension(input_file):
     return input_file
 
 # Función para realizar la transcripción en segundo plano
-def transcribir_audio(output_mp3, transcripcion_path):
+def transcribir_audio(output_mp3, transcripcion_path, language):
     global progress
     try:
         # Transcribir el audio con WhisperX
@@ -46,7 +63,7 @@ def transcribir_audio(output_mp3, transcripcion_path):
         print("Audio cargado exitosamente, iniciando transcripción...")
 
         # Transcripción en segmentos
-        result = whisperx_model.transcribe(audio)
+        result = whisperx_model.transcribe(audio, language=language)  # Usar el idioma seleccionado
         segments = result.get('segments', [])
 
         # Procesar los segmentos y calcular progreso real
@@ -57,13 +74,16 @@ def transcribir_audio(output_mp3, transcripcion_path):
         transcripcion = ""
         for i, segment in enumerate(segments):
             transcripcion += segment['text'] + " "
-            # Actualizar progreso
-            progress['percent'] = int((i + 1) / total_segments * 100)
-            progress['status'] = f"Transcribiendo... {progress['percent']}% completado"
-            print(progress['status'])
-            # Simulación de trabajo pesado
+
+            # Actualizar progreso cada 10 segmentos
+            if (i + 1) % 10 == 0 or i == total_segments - 1:
+                progress['percent'] = int((i + 1) / total_segments * 100)
+                progress['status'] = f"Transcribiendo... {progress['percent']}% completado"
+                print(progress['status'])
+
+            # Reducir la pausa para mejorar la velocidad
             import time
-            time.sleep(0.05)  # Pequeña pausa simulada para actualización progresiva
+            time.sleep(0.01)
 
         # Guardar la transcripción en el archivo de texto
         with open(transcripcion_path, 'w') as f:
@@ -88,18 +108,22 @@ def upload_file():
         audio_file.save(input_path)
         print(f"Archivo guardado en {input_path}.")
 
-        # Renombrar el archivo a MP3 si es necesario
-        output_mp3 = ensure_mp3_extension(input_path)
+        # Convertir el archivo a MP3 optimizado
+        output_mp3 = os.path.join('uploads', 'audio_optimized.mp3')
+        convert_to_mp3(input_path, output_mp3)
 
         # Nombre de archivo de transcripción
         transcripcion_filename = os.path.splitext(original_filename)[0] + '.txt'
         transcripcion_path = os.path.join('transcriptions', transcripcion_filename)
 
+        # Capturar el idioma seleccionado por el usuario
+        selected_language = request.form['language']
+
         # Restablecer progreso
         progress = {"status": "Iniciando transcripción...", "percent": 0}
 
         # Procesar el audio en un hilo separado para no bloquear el servidor
-        thread = threading.Thread(target=transcribir_audio, args=(output_mp3, transcripcion_path))
+        thread = threading.Thread(target=transcribir_audio, args=(output_mp3, transcripcion_path, selected_language))
         thread.start()
 
         return render_template('progress.html', transcripcion_filename=transcripcion_filename)
