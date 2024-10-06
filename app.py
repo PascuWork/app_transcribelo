@@ -18,17 +18,20 @@ app = Flask(__name__)
 
 # Verificación de CUDA: usar GPU si está disponible, de lo contrario, usar CPU
 device = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"Inicializando modelo WhisperX en {device}...")
-
-# Configuración de WhisperX
-whisperx_model = whisperx.load_model("medium", device, compute_type="float32")
-print(f"Modelo WhisperX cargado exitosamente en {device}.")
+print(f"Inicializando WhisperX en {device}...")
 
 # Variable global para almacenar el progreso
 progress = {
     "status": "Procesando...",
     "percent": 0
 }
+
+# Función para cargar el modelo de WhisperX según la selección del usuario
+def load_whisper_model(model_name):
+    print(f"Cargando modelo {model_name} en {device}...")
+    whisperx_model = whisperx.load_model(model_name, device, compute_type="float32")
+    print(f"Modelo {model_name} cargado exitosamente.")
+    return whisperx_model
 
 # Función para convertir el archivo de audio a MP3 optimizado en memoria
 def convert_to_mp3_in_memory(input_file):
@@ -62,9 +65,12 @@ def convert_to_mp3_in_memory(input_file):
     return output_mp3
 
 # Función para realizar la transcripción en segundo plano
-def transcribir_audio(input_stream, transcripcion_path, language):
+def transcribir_audio(input_stream, transcripcion_path, language, model_name):
     global progress
     try:
+        # Cargar el modelo seleccionado por el usuario
+        whisperx_model = load_whisper_model(model_name)
+
         # Crear un archivo temporal para guardar el audio desde el flujo en memoria
         with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as temp_audio_file:
             temp_audio_file.write(input_stream.read())
@@ -135,14 +141,15 @@ def upload_file():
         transcripcion_filename = os.path.splitext(original_filename)[0] + '.txt'
         transcripcion_path = os.path.join('transcriptions', transcripcion_filename)
 
-        # Capturar el idioma seleccionado por el usuario
+        # Capturar el idioma seleccionado y el modelo de Whisper
         selected_language = request.form['language']
+        selected_model = request.form['model']
 
         # Restablecer progreso
         progress = {"status": "Iniciando transcripción...", "percent": 0}
 
         # Procesar el audio en un hilo separado para no bloquear el servidor
-        thread = threading.Thread(target=transcribir_audio, args=(optimized_audio_stream, transcripcion_path, selected_language))
+        thread = threading.Thread(target=transcribir_audio, args=(optimized_audio_stream, transcripcion_path, selected_language, selected_model))
         thread.start()
 
         return render_template('progress.html', transcripcion_filename=transcripcion_filename)

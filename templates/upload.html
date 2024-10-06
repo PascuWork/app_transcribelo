@@ -1,27 +1,29 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Subir Archivo</title>
 </head>
 <body>
-    <h1>Sube tu archivo .mp3 o de otro formato de audio</h1>
+    <h1>Sube tu archivo de audio y selecciona un modelo de transcripción</h1>
     <form method="post" enctype="multipart/form-data">
         <input type="file" name="file" required><br><br>
-        
+        <label for="model">Selecciona el modelo de Whisper:</label>
+        <select name="model" id="model">
+            <option value="small">Small (Más rápido, ligeramente menos preciso)</option>
+            <option value="medium" selected>Medium (Balance entre velocidad y precisión)</option>
+            <option value="large">Large (Más preciso, pero más lento)</option>
+        </select><br><br>
         <label for="language">Selecciona el idioma del audio:</label>
-        <select name="language" required>
-            <option value="es">Español</option>
+        <select name="language" id="language">
             <option value="en">Inglés</option>
+            <option value="es">Español</option>
             <option value="de">Alemán</option>
             <option value="it">Italiano</option>
             <option value="fr">Francés</option>
             <option value="ja">Japonés</option>
             <option value="zh">Chino</option>
         </select><br><br>
-        
-        <button type="submit">Subir</button>
+        <button type="submit">Subir y Transcribir</button>
     </form>
 </body>
 </html>
