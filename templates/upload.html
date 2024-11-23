@@ -1,29 +1,60 @@
 <!doctype html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
     <title>Subir Archivo</title>
+    <!-- Enlazar el archivo CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
-    <h1>Sube tu archivo de audio y selecciona un modelo de transcripción</h1>
+
+    <h1>Sube tu Archivo de Audio</h1>
+
     <form method="post" enctype="multipart/form-data">
-        <input type="file" name="file" required><br><br>
-        <label for="model">Selecciona el modelo de Whisper:</label>
-        <select name="model" id="model">
-            <option value="small">Small (Más rápido, ligeramente menos preciso)</option>
-            <option value="medium" selected>Medium (Balance entre velocidad y precisión)</option>
-            <option value="large">Large (Más preciso, pero más lento)</option>
-        </select><br><br>
+        <label for="file">Selecciona un archivo de audio:</label>
+        <input type="file" name="file" id="file" required>
+
         <label for="language">Selecciona el idioma del audio:</label>
-        <select name="language" id="language">
-            <option value="en">Inglés</option>
-            <option value="es">Español</option>
-            <option value="de">Alemán</option>
-            <option value="it">Italiano</option>
-            <option value="fr">Francés</option>
-            <option value="ja">Japonés</option>
-            <option value="zh">Chino</option>
-        </select><br><br>
+        <!-- Selector personalizado -->
+        <div class="custom-select-wrapper">
+            <div class="custom-select">
+                <div class="custom-select__trigger">
+                    <span><img src="{{ url_for('static', filename='images/flags/es.png') }}" alt="Español" class="flag-icon"> Español</span>
+                    <div class="arrow"></div>
+                </div>
+                <div class="custom-options">
+                    <div class="custom-option selected" data-value="es">
+                        <img src="{{ url_for('static', filename='images/flags/es.png') }}" alt="Español" class="flag-icon"> Español
+                    </div>
+                    <div class="custom-option" data-value="en">
+                        <img src="{{ url_for('static', filename='images/flags/en.png') }}" alt="Inglés" class="flag-icon"> Inglés
+                    </div>
+                    <div class="custom-option" data-value="ja">
+                        <img src="{{ url_for('static', filename='images/flags/ja.png') }}" alt="Japonés" class="flag-icon"> Japonés
+                    </div>
+                    <!-- Agrega más opciones de idioma aquí -->
+                </div>
+            </div>
+        </div>
+        <input type="hidden" name="language" id="language" value="es">
+
+        <!-- Selector de modelo -->
+        <label for="model">Selecciona el modelo de Whisper:</label>
+        <select name="model" id="model" required>
+            <option value="tiny">Tiny (Rápido, menos preciso)</option>
+            <option value="base">Base (Equilibrio entre velocidad y precisión)</option>
+            <option value="small" selected>Small</option>
+            <option value="medium">Medium</option>
+            <option value="large-v2">Large (Más preciso, más lento)</option>
+        </select>
+
         <button type="submit">Subir y Transcribir</button>
     </form>
+
+    <!-- Logo en la esquina inferior izquierda -->
+    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="logo">
+
+    <!-- Enlazar el archivo JavaScript -->
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
 </body>
 </html>

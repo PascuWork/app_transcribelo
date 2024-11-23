@@ -1,64 +1,115 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transcripción en progreso</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Transcripción en Progreso</title>
     <style>
-        #progress-bar-container {
-            width: 100%;
-            background-color: #f3f3f3;
-            border-radius: 25px;
-            margin-top: 20px;
-        }
-        #progress-bar {
-            width: 0%;
-            height: 30px;
-            background-color: #4caf50;
-            border-radius: 25px;
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fff9e6; /* Fondo amarillo pastel */
+            color: #333;
             text-align: center;
-            line-height: 30px;
-            color: white;
+            padding: 20px;
+        }
+        #wave-loader {
+            display: inline-block;
+            margin-top: 50px;
+            width: 60px;
+            height: 60px;
+            position: relative;
+        }
+        .wave {
+            background: #ffcc80; /* Naranja suave */
+            position: absolute;
+            bottom: 0;
+            width: 10px;
+            height: 20px;
+            animation: wave 1.2s infinite ease-in-out;
+        }
+        .wave:nth-child(1) {
+            left: 0px;
+            animation-delay: -1.2s;
+        }
+        .wave:nth-child(2) {
+            left: 15px;
+            animation-delay: -1.1s;
+        }
+        .wave:nth-child(3) {
+            left: 30px;
+            animation-delay: -1.0s;
+        }
+        .wave:nth-child(4) {
+            left: 45px;
+            animation-delay: -0.9s;
+        }
+        @keyframes wave {
+            0%, 40%, 100% {
+                transform: scaleY(0.5);
+            }
+            20% {
+                transform: scaleY(1);
+            }
+        }
+        #progress-status {
+            margin-top: 20px;
+            font-size: 1.2em;
         }
         #download-links {
             display: none;
-            margin-top: 20px;
+            margin-top: 30px;
+        }
+        #download-links a {
+            text-decoration: none;
+            color: #fff;
+            background-color: #ffb84d; /* Naranja más vibrante */
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin: 5px;
+            display: inline-block;
+        }
+        #download-links a:hover {
+            background-color: #ffa31a; /* Naranja más oscuro */
         }
     </style>
 </head>
 <body>
-    <h1>Transcripción en progreso...</h1>
-    <div id="progress-bar-container">
-        <div id="progress-bar">0%</div>
+    <h1>Transcripción en Progreso...</h1>
+    <div id="wave-loader">
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
     </div>
     <p id="progress-status">Iniciando transcripción...</p>
 
     <div id="download-links">
         <h2>Procesamiento Completo</h2>
         <p>Tu archivo ha sido procesado. Puedes descargar los resultados a continuación:</p>
-        <a id="download-transcription" href="#">Descargar Transcripción (.txt)</a><br>
-        <a id="download-summary" href="#">Descargar Resumen (.md)</a>
+        <a id="download-transcription" href="#">Descargar Transcripción (.txt)</a>
+        <!-- Si no tienes un resumen, puedes eliminar el siguiente enlace -->
+        <!-- <a id="download-summary" href="#">Descargar Resumen (.md)</a> -->
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        // Pasar transcripcion_filename a JavaScript
+        var transcripcionFilename = "{{ transcripcion_filename }}";
+
         function updateProgress() {
             $.getJSON('/progress', function(data) {
-                $('#progress-bar').css('width', data.percent + '%');
-                $('#progress-bar').text(data.percent + '%');
                 $('#progress-status').text(data.status);
 
                 if (data.percent < 100) {
                     setTimeout(updateProgress, 1000);  // Actualizar cada 1 segundo
                 } else {
-                    // Mostrar los enlaces de descarga cuando el proceso termine
-                    $('#progress-bar-container').hide();
+                    // Mostrar los enlaces de descarga
+                    $('#wave-loader').hide();
                     $('#progress-status').hide();
                     $('#download-links').show();
-
                     // Actualizar enlaces de descarga
-                    $('#download-transcription').attr('href', '/download/{{ transcripcion_filename }}');
-                    $('#download-summary').attr('href', '/download/resumen.md');
+                    $('#download-transcription').attr('href', '/download/' + transcripcionFilename);
+                    // Si tienes un resumen, descomenta la siguiente línea
+                    // $('#download-summary').attr('href', '/download/resumen.md');
                 }
             });
         }
