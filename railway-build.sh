@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Asegurarse de que el archivo tiene permisos de ejecución
+chmod +x railway-build.sh
+
 # Instalación de FFmpeg
 echo "Clonando el repositorio oficial de FFmpeg..."
 git clone https://github.com/FFmpeg/FFmpeg.git ffmpeg-source
@@ -10,7 +13,7 @@ apt-get update && apt-get install -y yasm pkg-config gcc g++ make libsndfile1 py
 echo "Compilando FFmpeg desde el código fuente..."
 cd ffmpeg-source
 ./configure --prefix=/usr/local --disable-static --enable-shared
-make -j$(nproc)  # Usa múltiples núcleos para compilar más rápido
+make -j$(nproc)
 make install
 
 echo "Limpiando archivos temporales..."
