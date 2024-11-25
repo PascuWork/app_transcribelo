@@ -2,11 +2,6 @@
 
 # Configuración del entorno para el proyecto
 
-# Crear un entorno virtual
-python -m venv venv
-
-# Activar el entorno virtual en Windows
-source venv/Scripts/activate
 
 # Instalar las dependencias necesarias desde requirements.txt (si no existe, crearlo primero)
 if [[ ! -f "requirements.txt" ]]; then
@@ -24,10 +19,6 @@ pip install -r requirements.txt
 # Crear la estructura de directorios
 mkdir -p templates static/css static/js static/images/flags uploads transcriptions summaries
 
-# Crear el archivo .env con las variables necesarias
-cat <<EOL > .env
-OPENAI_API_KEY="TU_CLAVE_API_AQUÍ"
-EOL
 
 # Crear archivo app.py con el contenido actualizado de la aplicación Flask
 cat <<EOL > app.py
