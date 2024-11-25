@@ -8,7 +8,7 @@ from io import BytesIO
 import tempfile
 
 # Configurar FFmpeg
-ffmpeg_path = "P:/ffmpeg/bin/ffmpeg.exe"
+ffmpeg_path = "ffmpeg"
 
 app = Flask(__name__)
 
