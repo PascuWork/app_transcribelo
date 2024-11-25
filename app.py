@@ -183,4 +183,7 @@ if __name__ == '__main__':
     # Asegúrate de que el directorio 'transcriptions' existe
     if not os.path.exists('transcriptions'):
         os.makedirs('transcriptions')
-    app.run(debug=True)
+
+    # Configuración para Render: usar host 0.0.0.0 y el puerto proporcionado por la variable de entorno PORT
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
