@@ -1,9 +1,19 @@
 #!/bin/bash
-# Descargar FFmpeg
-curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz -o ffmpeg.tar.xz
-# Extraer el archivo
-tar -xf ffmpeg.tar.xz
-# Mover el binario de FFmpeg a /usr/local/bin
-mv ffmpeg-*-static/ffmpeg /usr/local/bin/ffmpeg
-# Limpieza
-rm -rf ffmpeg.tar.xz ffmpeg-*-static
+
+echo "Clonando el repositorio oficial de FFmpeg..."
+git clone https://github.com/FFmpeg/FFmpeg.git ffmpeg-source
+
+echo "Instalando dependencias necesarias para compilar FFmpeg..."
+apt-get update && apt-get install -y yasm pkg-config gcc g++ make
+
+echo "Compilando FFmpeg desde el código fuente..."
+cd ffmpeg-source
+./configure --prefix=/usr/local --disable-static --enable-shared
+make
+make install
+
+echo "Limpiando archivos temporales..."
+cd ..
+rm -rf ffmpeg-source
+
+echo "FFmpeg instalado exitosamente."
