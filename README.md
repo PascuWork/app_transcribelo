@@ -64,5 +64,5 @@ Antes de comenzar, asegúrate de tener instalados los siguientes programas:
 
 - **Python 3.x**: Puedes descargarlo desde [aquí](https://www.python.org/downloads/).
 - **FFmpeg**: Asegúrate de que esté instalado y añadido al `PATH` del sistema. Si no lo tienes, puedes instalarlo siguiendo las instrucciones proporcionadas en el script `setup_ffmpeg.sh`.
-- **Clave de API de OpenAI**: Necesitarás una clave API para acceder a los servicios de OpenAI.
+- **Clave de API de OpenAI**: Necesitarás una clave API para acceder a los servicios de OpenAI. 
 
