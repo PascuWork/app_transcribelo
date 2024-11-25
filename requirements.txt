@@ -3,3 +3,4 @@ python-dotenv  # Para cargar variables de entorno desde .env
 openai  # Para interactuar con la API de OpenAI
 whisperx @ git+https://github.com/m-bain/whisperx.git  # WhisperX para transcripción y alineación avanzada
 #pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+gunicorn
