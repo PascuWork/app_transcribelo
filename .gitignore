@@ -10,5 +10,7 @@ __pycache__/
 # Archivos de configuración o claves
 .env
 .mp3
+.txt
+.md
 
 .sh
