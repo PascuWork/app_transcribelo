@@ -13,4 +13,5 @@ __pycache__/
 .txt
 .md
 
-.sh
+setup_FFpegm.sh
+setup_project.sh
