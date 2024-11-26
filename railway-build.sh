@@ -1,8 +1,3 @@
-#!/bin/bash
-
-# Asegurarse de que el archivo tiene permisos de ejecución
-chmod +x railway-build.sh
-
 # Instalación de FFmpeg
 echo "Clonando el repositorio oficial de FFmpeg..."
 git clone https://github.com/FFmpeg/FFmpeg.git ffmpeg-source
@@ -15,6 +10,9 @@ cd ffmpeg-source
 ./configure --prefix=/usr/local --disable-static --enable-shared
 make -j$(nproc)
 make install
+
+echo "Agregando FFmpeg al PATH..."
+export PATH="/usr/local/bin:$PATH"
 
 echo "Limpiando archivos temporales..."
 cd ..
